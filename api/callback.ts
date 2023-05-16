@@ -56,7 +56,7 @@ function renderBody(status: "success" | "error", content: any) {
      console.debug("receiveMessage", message);
      window.opener.postMessage(
        'authorization:${content.provider}:${status}:${JSON.stringify(content)}',
-       message.origin
+       "*"
      );
      window.removeEventListener("message", receiveMessage, false);
      sendMessage("Authorized, closing ...");
