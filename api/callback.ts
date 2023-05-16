@@ -34,28 +34,43 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 };
 
-function renderBody(
-  status: string,
-  content: {
-    token: string;
-    provider: string;
-  }
-) {
+function renderBody(status: 'success' | 'error', content: any) {
   return `
-    <script>
-      const receiveMessage = (message) => {
-        window.opener.postMessage(
-          'authorization:${content.provider}:${status}:${JSON.stringify(
-    content
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>Authorizing ...</title>
+    </head>
+    <body>
+      <p id="message"></p>
+      <script>
+        // Output a message to the user
+        function sendMessage(message) {
+          document.getElementById("message").innerText = message;
+          document.title = message
+        }
+
+        // Handle a window message by sending the auth to the "opener"
+        function receiveMessage(message) {
+          console.debug("receiveMessage", message);
+          window.opener.postMessage(
+            'authorization:${content.provider}:${status}:${JSON.stringify(
+    content,
   )}',
-          message.origin
-        );
+            message.origin + '/api/oauth'
+          );
+          window.removeEventListener("message", receiveMessage, false);
+          sendMessage("Authorized, closing ...");
+        }
 
-        window.removeEventListener("message", receiveMessage, false);
-      }
-      window.addEventListener("message", receiveMessage, false);
+        sendMessage("Authorizing ...");
+        window.addEventListener("message", receiveMessage, false);
 
-      window.opener.postMessage("authorizing:${content.provider}", "*");
-    </script>
+        console.debug("postMessage", "authorizing:github", "*")
+        window.opener.postMessage("authorizing:github", "*");
+      </script>
+    </body>
+  </html>
   `;
 }
